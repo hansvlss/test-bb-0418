@@ -3,7 +3,7 @@ name: Sync and Deploy BPB Worker
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 1 * * *"  # 每天1点执行一次（UTC）
+    - cron: "0 1 * * *" # 每天凌晨1点自动同步
 
 permissions:
   contents: write
@@ -23,21 +23,44 @@ jobs:
         with:
           node-version: "lts/*"
 
-      - name: Download latest BPB worker.js and wrap it
+      - name: Sync worker.js and generate project files
         run: |
+          # 创建目录
           mkdir -p functions/worker
+          mkdir -p public
+
+          # 下载最新 worker.js
           curl -sSL -o functions/worker/worker.js https://github.com/bia-pain-bache/BPB-Worker-Panel/releases/latest/download/worker.js
 
-          echo "import workerCode from './worker.js';" > functions/worker/index.js
-          echo "" >> functions/worker/index.js
-          echo "export const onRequest = async (context) => {" >> functions/worker/index.js
-          echo "  return await workerCode.fetch(context.request);" >> functions/worker/index.js
-          echo "};" >> functions/worker/index.js
+          # 创建 Functions API 封装
+          cat > functions/worker/[index].js << 'EOF'
+import workerCode from './worker.js';
 
-      - name: Commit and Push updated worker
+export const onRequest = async (context) => {
+  return await workerCode.fetch(context.request);
+};
+EOF
+
+          # 创建简单的首页
+          cat > public/index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BPB Worker API</title>
+</head>
+<body style="font-family: sans-serif; text-align: center; margin-top: 100px;">
+  <h1>🔵 BPB Worker 部署成功！</h1>
+  <p>访问 API: <a href="/worker" target="_blank">/worker</a></p>
+</body>
+</html>
+EOF
+
+      - name: Commit and Push updated files
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "🔄 Sync and wrap BPB worker into Cloudflare Pages Functions"
+          commit_message: "🔄 Sync BPB worker, generate Functions and Home page"
           branch: main
           commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-          push_options: "--force"
+          push_options: --force
