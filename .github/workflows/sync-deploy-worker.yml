@@ -13,40 +13,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # 获取完整的历史记录，方便操作
+          fetch-depth: 0
 
-      # Step 2: Set up Node.js environment
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "lts/*"  # 使用最新的LTS版本
+          node-version: "lts/*"
 
-      # Step 3: Download latest BPB worker.js and wrap it in Cloudflare Pages Functions
-      - name: Download latest BPB worker.js
+      - name: Download latest BPB worker.js and wrap it
         run: |
-          # 创建目标目录
           mkdir -p functions/worker
-          # 下载最新的 worker.js 文件
           curl -sSL -o functions/worker/worker.js https://github.com/bia-pain-bache/BPB-Worker-Panel/releases/latest/download/worker.js
-          
-          # 创建 Cloudflare Pages Functions 的包装代码
-          cat > functions/worker/index.js << 'EOF'
-import workerCode from './worker.js';
 
-export const onRequest = async (context) => {
-  return await workerCode.fetch(context.request);
-};
-EOF
+          echo "import workerCode from './worker.js';" > functions/worker/index.js
+          echo "" >> functions/worker/index.js
+          echo "export const onRequest = async (context) => {" >> functions/worker/index.js
+          echo "  return await workerCode.fetch(context.request);" >> functions/worker/index.js
+          echo "};" >> functions/worker/index.js
 
-      # Step 4: Commit and Push updated worker
       - name: Commit and Push updated worker
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "🔄 Sync and wrap BPB worker into Cloudflare Pages Functions"
           branch: main
           commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-          push_options: "--force"  # 小心使用 --force，避免强制覆盖
+          push_options: "--force"
