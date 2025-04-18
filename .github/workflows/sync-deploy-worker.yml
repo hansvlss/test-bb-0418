@@ -49,4 +49,4 @@ EOF
           commit_message: "🔄 Sync and wrap BPB worker into Cloudflare Pages Functions"
           branch: main
           commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
-          push_options: --force  # 小心使用 --force，避免强制覆盖
+          push_options: "--force"  # 小心使用 --force，避免强制覆盖
